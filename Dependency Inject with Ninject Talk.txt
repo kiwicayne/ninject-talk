@@ -1,0 +1,86 @@
+We will discuss how dependency injection relates to unit testing, separation of concerns and how a project can be structured to make use of it.
+
+Start with a simple project and refactor.  Don't worry we will get to Ninject!
+
+http://www.ninject.org/
+NuGet Ninject (others specifically for helping out with asp.net etc)
+
+Other libraries
+- Moq
+- Nunit
+
+Tools
+- NCrunch
+- Resharper - exceptional plugin
+
+Onion Architecture
+http://jeffreypalermo.com/blog/the-onion-architecture-part-1/
+
+Definitions
+-----------
+
+IoC or Inversion of Control.  It is a pattern for providing implementations of a contract.  Rather than your code creating instances of a class directly, an IoC container can be used to provide the specific implementation of what you want.  Your code just deals with the interfaces.
+
+DI or Dependency Injection is a form of IoC, where implementations (or dependencies) are passed into an object.
+
+Example
+-------
+Application to send messages to people, names loaded from a file.
+
+1. Simple project with no dependency injection.  
+
+  How to write a unit test for it? 
+  Very difficult - particularly for the Send method.
+  Still get good code coverage, for small projects this is good enough - show how NCrunch displays this
+
+2. Refactor for single responsibility
+
+  Better, but testing ConsoleMessageSender requires integration tests
+  Duplication with new NameRepository tests
+
+3. Refactor to pass in dependencies.   
+
+  Create INameRepository, reference this instead of FileNameRespository so it can be mocked
+
+  Introduce IWriter, ConsoleWriter so we can test the output, again we can using mocking
+
+  Rename ConsoleMessageSender to MessageSender, now that it takes an IWriter, it is no longer console specific
+  This is dependency injection - explain.
+
+  Now it is easier to write a unit test
+  No more duplication in NameRepositoryTests and MesageSenderTests
+  
+  ConsoleWriter is so simple I wouldn't bother writing tests for it
+
+4. Introduce Ninject
+
+  Instead of manually passing in dependencies, configure how dependencies are resolved using IoC - Ninject 
+
+  Note that we add MessageSender to Ninject and its dependencies are now automatically resolved!
+
+  Tests don't change, but you can add tests to ensure Ninject resolves dependencies correctly if you like
+
+5. Create project with onion architecture that uses ninject and modules: console (ui), core, infrastracture, bootstrapper.   
+
+  What goes in each? 
+    Executable - Console, Wpf, WebApi, Asp.net MVC
+
+    Core - Usually no dependencies on other libraries, POCO models, Business logic (like message sender), interfaces, extension methods, etc
+
+    Infrastructure - All dependencies go here (e.g. Entity Framework, NLog) and specific implementations of interfaces
+
+    Bootstrapper - Ninject and other "wiring up" you may need
+    
+    Test Projects - I generally have one for each of the above
+
+  Which assemblies can reference others?  
+      
+  Implementations become internal, not public.  Use internalsvisibleto in the boostrapper and test project.
+  
+  Step5 project only has UI - Program.cs in it - easy to swap out for ASP.Net or WPF app
+
+  Step5.Infrastructure - e.g To use Entity Framework for a repository, only need to update Infracture, nothing else changes.  A file writer instead of console writer - again, only Infrastructure changes.
+
+  Compare to original project - Ninject and dependency injection are good for larger projects, but not worth it for the example I used, it is too small and simple to warrant added complexity.
+
+  End up with a lot of one to one mappings between an interface and an implementation.  Not a bad thing, but more work, and feels very enterprisey.  I find myself looking at interfaces a lot to understand code, without even looking at the implemenations.
