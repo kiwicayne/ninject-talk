@@ -17,8 +17,8 @@ namespace Step1
     {
       var filePath = Path.Combine(Directory.GetCurrentDirectory(), @"Data\names.txt");
 
-      var emailSender = new ConsoleMessageSender(filePath);
-      emailSender.Send("Hello {0}");
+      var messageSender = new ConsoleMessageSender(filePath);
+      messageSender.Send("Hello {0}");
     }
 
     private static void Exit()
